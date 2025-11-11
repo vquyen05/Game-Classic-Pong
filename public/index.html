@@ -7,9 +7,22 @@
     <link rel="stylesheet" href="style.css">
     <script src="/socket.io/socket.io.js"></script>
 </head>
-
 <body>
-
+    <div id="homeScreen" class="screen">
+        <h1 class="title">🏓 Ping Pong Multiplayer</h1>
+        <div class="form-container">
+            <input type="text" id="playerName" placeholder="Nhập tên của bạn" required>
+            <div class="button-group">
+                <button id="createRoom" class="btn primary">Tạo phòng mới</button>
+                <div class="join-room>
+                    <input typr="text" id="roomId" placeholder="Nhập tên của bạn" required>
+                    <button id="joinRoom" class"btn secondary">VÀo phòng</button>
+                </div>
+                <button id="randomRoom" class="btn accent">Tham gia ngẫu nhiên</button>
+            </div>
+        </div>
+    </div>   
+        
 
     <script src="game.js"></script>
 </body>
