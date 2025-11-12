@@ -72,4 +72,24 @@ canvas{background: linear-gradient(180deg, #f9fbff, #f7fbff);border-radius: 8px;
 
 /* Layout for game screen */
 .modern .game-header{padding: 8px 12px;border-bottom: 1px solid rgba(11,36,64,0.04);margin-bottom: 12px}
+.game-layout{display: flex;align-items: flex-start;justify-content: center;padding: 12px}
+.game-area{display: flex;flex-direction: column;align-items: center;width: 100%;max-width: 760px}
+.game-message{color: var(--primary);font-weight: 600;margin-bottom: 8px;min-height: 22px}
+.controls{margin-top: 10px;display: flex;gap: 8px;align-items: center}
 
+/* Top scoreboard inside game area */
+.top-bar{width: 100%;max-width: 720px;display: flex;align-items: center;justify-content: space-between;padding: 10px 14px;border-radius: 10px;background: var(--panel);margin-bottom: 10px;border: 1px solid rgba(11,36,64,0.04)}
+.top-player{display: flex;align-items: center;gap: 8px}
+.top-name{font-size: 16px;color: var(--text);font-weight: 700}
+.top-score{font-size: 20px;color: var(--primary);font-weight: 800}
+.top-vs{color: rgba(7,32,63,0.18);font-weight: 700}
+
+.btn.danger{background: #ff6b6b;color: #041027}
+.btn.danger:hover{background: #ff5252}
+
+@media (max-width: 900px){
+    .game-layout{flex-direction: column}
+    .player-panel{width: 100%;justify-content: space-between}
+    .game-area{width: 100%}
+    canvas{width: 100%;height: auto}
+}
