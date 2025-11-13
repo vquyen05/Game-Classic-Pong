@@ -53,6 +53,14 @@ randomRoomBtn.addEventListener("click", () => {
     }
     socket.emit("joinRandom", playerName);
 });
+// Di chuyển paddle
+document.addEventListener("mousemove", (e) => {
+  if (gameOver) return;
+  const rect = canvas.getBoundingClientRect();
+  const posY = e.clientY - rect.top;
+  socket.emit("move", posY);
+});
+
 
 
 // Socket Events
