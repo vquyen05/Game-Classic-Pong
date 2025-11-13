@@ -88,7 +88,12 @@ socket.on("roomJoined", ({ roomId }) => {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+ // Vẽ background trước (ảnh nằm trong thư mục public)
+    if (background.complete && background.naturalHeight !== 0) {
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    } else {
+        background.onload = () => ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    }
      // 🎾 Vẽ bóng nổi bật màu đỏ
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, 11, 0, Math.PI * 2);
