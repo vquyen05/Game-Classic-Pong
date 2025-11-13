@@ -61,8 +61,6 @@ document.addEventListener("mousemove", (e) => {
   socket.emit("move", posY);
 });
 
-
-
 // Socket Events
 socket.on("roomCreated", ({ roomId }) => {
     // Reset game state trước khi vào phòng mới
@@ -74,6 +72,7 @@ socket.on("roomCreated", ({ roomId }) => {
     message = "⏳ Đang chờ người chơi khác...";
     draw();
 });
+
 
 socket.on("roomJoined", ({ roomId }) => {
     // Reset game state trước khi vào phòng mới
@@ -90,13 +89,19 @@ socket.on("roomJoined", ({ roomId }) => {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Vẽ bóng (màu tương phản)
-    ctx.fillStyle = CANVAS_BALL_COLOR;
+     // 🎾 Vẽ bóng nổi bật màu đỏ
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, 8, 0, Math.PI * 2);
+    ctx.arc(ball.x, ball.y, 11, 0, Math.PI * 2);
+    ctx.shadowColor = "#ff0000ff";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#ff0000ff";
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#ff0202ff";
+    ctx.stroke();
 
-    // Vẽ paddle (màu primary để tương phản)
+    // Vẽ paddle 
     ctx.fillStyle = CANVAS_PADDLE_COLOR;
     const ids = Object.keys(players);
     ids.forEach((id, i) => {
