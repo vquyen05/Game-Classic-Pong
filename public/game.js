@@ -112,3 +112,73 @@ socket.on("gameStart", ({ players: playersList }) => {
                 }
     draw();
 });
+
+socket.on("error", (msg) => {
+    alert(msg);
+});
+
+socket.on("playerLeft", (msg) => {
+    message = msg;
+    // Nếu game đang diễn ra (chưa kết thúc), tự động về màn hình home
+    if (!gameOver) {
+        draw();
+        setTimeout(() => {
+            homeScreen.classList.remove("hidden");
+            gameScreen.classList.add("hidden");
+            resetGameState();
+            currentRoom = null;
+        }, 2000);
+    } else {
+        // Nếu game đã kết thúc, chỉ hiển thị thông báo và giữ nút thoát
+        // Xóa dữ liệu game cũ nhưng giữ lại trạng thái gameOver và nút thoát
+        players = {};
+        ball = { x: 300, y: 200 };
+        message = msg;
+    // Clear top scoreboard
+    if (topLeftNameEl) topLeftNameEl.textContent = '---';
+    if (topRightNameEl) topRightNameEl.textContent = '---';
+    if (topLeftScoreEl) topLeftScoreEl.textContent = 0;
+    if (topRightScoreEl) topRightScoreEl.textContent = 0;
+        draw();
+    }
+});
+
+// Game Events
+socket.on("update", (data) => {
+    players = data.players;
+    ball = data.ball;
+        // update top scoreboard if available
+        const ids = Object.keys(players);
+        if (ids[0]) {
+            const p0 = players[ids[0]];
+            if (topLeftNameEl) topLeftNameEl.textContent = p0.name || '---';
+            if (topLeftScoreEl) topLeftScoreEl.textContent = p0.score ?? 0;
+        }
+        if (ids[1]) {
+            const p1 = players[ids[1]];
+            if (topRightNameEl) topRightNameEl.textContent = p1.name || '---';
+            if (topRightScoreEl) topRightScoreEl.textContent = p1.score ?? 0;
+        }
+        draw();
+});
+
+socket.on("message", (msg) => {
+    message = msg;
+    setTimeout(() => (message = ""), 2000);
+        // show message in DOM overlay for clarity
+        if (gameMessageEl) {
+            gameMessageEl.textContent = msg;
+            setTimeout(() => (gameMessageEl.textContent = ''), 2000);
+        }
+        draw();
+});
+
+socket.on("gameOver", (data) => {
+    if (gameOver) return;
+    gameOver = true;
+    message = `🎉 ${data.winner} thắng trận!`;
+    draw();
+    showRestartOptions();
+    showExitButton();
+    if (gameMessageEl) gameMessageEl.textContent = message;
+});
