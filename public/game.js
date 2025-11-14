@@ -91,3 +91,24 @@ socket.on("roomJoined", ({ roomId }) => {
     message = "✅ Đã vào phòng thành công!";
     draw();
 });
+
+socket.on("gameStart", ({ players: playersList }) => {
+    // Reset trạng thái game khi bắt đầu trận mới
+    resetGameState(); // Reset hoàn toàn, bao gồm ẩn nút thoát
+    
+    message = "🎮 Trận đấu bắt đầu!";
+    const playerNames = playersList.map(p => p.name).join(" vs ");
+    roomInfo.textContent = `${currentRoom} (${playerNames})`;
+                // Update top scoreboard
+                if (playersList[0]) {
+                    const p0 = playersList[0];
+                    if (topLeftNameEl) topLeftNameEl.textContent = p0.name || '---';
+                    if (topLeftScoreEl) topLeftScoreEl.textContent = p0.score ?? 0;
+                }
+                if (playersList[1]) {
+                    const p1 = playersList[1];
+                    if (topRightNameEl) topRightNameEl.textContent = p1.name || '---';
+                    if (topRightScoreEl) topRightScoreEl.textContent = p1.score ?? 0;
+                }
+    draw();
+});
