@@ -168,3 +168,98 @@ io.on("connection", (socket) => {
 server.listen(3000, () => {
   console.log("✅ Server running at http://localhost:3000");
 });
+// Vòng lặp cập nhật bóng & gửi dữ liệu cho client
+setInterval(() => {
+  // Cập nhật từng phòng
+  for (const [roomId, room] of Object.entries(rooms)) {
+    const ids = Object.keys(room.players);
+    if (ids.length < 2 || room.status !== 'playing') continue;
+
+    const playerLeft = room.players[ids[0]];
+    const playerRight = room.players[ids[1]];
+    const ball = room.ball;
+
+    // Kiểm tra game over
+    const isGameOver = playerLeft.score >= WIN_SCORE || playerRight.score >= WIN_SCORE;
+
+    // Nếu game chưa kết thúc thì mới cập nhật vị trí bóng
+    if (!isGameOver) {
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      // Va chạm cạnh trên/dưới
+      if (ball.y + ball.radius > canvasHeight || ball.y - ball.radius < 0) {
+        ball.dy *= -1;
+      }
+
+      // Paddle trái
+      if (
+        ball.x - ball.radius < 30 &&
+        ball.y > playerLeft.y - 40 &&
+        ball.y < playerLeft.y + 40
+      ) {
+  // Tăng tốc độ bóng lên 1.1 lần nhưng không vượt quá MAX_BALL_SPEED
+  ball.speed = Math.min(ball.speed * SPEED_MULTIPLIER, MAX_BALL_SPEED);
+
+        // Tính toán góc mới ngẫu nhiên (từ -30 đến 30 độ)
+        const deflectionAngle = (Math.random() * 60 - 30) * Math.PI / 180;
+        // Sau khi va chạm paddle trái, bóng phải bật sang phải -> baseAngle = 0 (0 radian)
+        const baseAngle = 0; // hướng sang phải
+
+        // Tính toán vector vận tốc mới (đảm bảo dx > 0)
+        ball.dx = ball.speed * Math.cos(baseAngle + deflectionAngle);
+        ball.dy = ball.speed * Math.sin(baseAngle + deflectionAngle);
+
+        // Đặt bóng ra ngoài paddle 1px để tránh va chạm liên tiếp
+        ball.x = 30 + ball.radius + 1;
+      }
+
+      // Paddle phải
+      if (
+        ball.x + ball.radius > canvasWidth - 30 &&
+        ball.y > playerRight.y - 40 &&
+        ball.y < playerRight.y + 40
+      ) {
+  // Tăng tốc độ bóng lên 1.1 lần nhưng không vượt quá MAX_BALL_SPEED
+  ball.speed = Math.min(ball.speed * SPEED_MULTIPLIER, MAX_BALL_SPEED);
+
+        // Tính toán góc mới ngẫu nhiên (từ -30 đến 30 độ)
+        const deflectionAngle = (Math.random() * 60 - 30) * Math.PI / 180;
+        // Sau khi va chạm paddle phải, bóng phải bật sang trái -> baseAngle = Math.PI
+        const baseAngle = Math.PI; // hướng sang trái
+
+        // Tính toán vector vận tốc mới (đảm bảo dx < 0)
+        ball.dx = ball.speed * Math.cos(baseAngle + deflectionAngle);
+        ball.dy = ball.speed * Math.sin(baseAngle + deflectionAngle);
+
+        // Đặt bóng ra ngoài paddle 1px để tránh va chạm liên tiếp
+        ball.x = canvasWidth - 30 - ball.radius - 1;
+      }
+
+      // Nếu bóng ra khỏi biên ngang
+      if (ball.x < 0) {
+        playerRight.score++;
+        io.to(roomId).emit("message", `🏓 ${playerRight.name} ghi điểm!`);
+        resetBall(room, -1); // Bóng bay về phía người thua điểm (bên trái)
+      } else if (ball.x > canvasWidth) {
+        playerLeft.score++;
+        io.to(roomId).emit("message", `🏓 ${playerLeft.name} ghi điểm!`);
+        resetBall(room, 1); // Bóng bay về phía người thua điểm (bên phải)
+      }
+
+      // Kiểm tra thắng cuộc
+      if (playerLeft.score >= WIN_SCORE || playerRight.score >= WIN_SCORE) {
+        const winner = playerLeft.score >= WIN_SCORE ? playerLeft.name : playerRight.name;
+        io.to(roomId).emit("gameOver", { winner });
+        // Đặt bóng về giữa và dừng lại
+        ball.x = canvasWidth / 2;
+        ball.y = canvasHeight / 2;
+        ball.dx = 0;
+        ball.dy = 0;
+      }
+    }
+
+    // Gửi dữ liệu cập nhật cho client trong phòng
+    io.to(roomId).emit("update", { players: room.players, ball });
+  }
+}, 30);
