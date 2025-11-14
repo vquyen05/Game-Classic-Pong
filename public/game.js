@@ -68,3 +68,15 @@ document.addEventListener("mousemove", (e) => {
   const posY = e.clientY - rect.top;
   socket.emit("move", posY);
 });
+
+// Socket Events
+socket.on("roomCreated", ({ roomId }) => {
+    // Reset game state trước khi vào phòng mới
+    resetGameState();
+    currentRoom = roomId;
+    roomInfo.textContent = roomId;
+    homeScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    message = "⏳ Đang chờ người chơi khác...";
+    draw();
+});
