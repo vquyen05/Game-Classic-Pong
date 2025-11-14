@@ -139,6 +139,20 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Khi trận tái đấu bắt đầu
+  socket.on("rematchStart", () => {
+      gameOver = false;
+      message = "🔁 Trận đấu mới bắt đầu!";
+      draw();
+
+      // Xóa nút chơi lại và ẩn nút thoát
+      const restartBtn = document.getElementById("restartBtn");
+      if (restartBtn) restartBtn.remove();
+      
+      const exitBtn = document.getElementById("exitBtn");
+      if (exitBtn) exitBtn.classList.add("hidden");
+  });
+
   // Khi người chơi ngắt kết nối
   socket.on("disconnect", () => {
     if (currentRoom) {
@@ -164,10 +178,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Khởi động server
-server.listen(3000, () => {
-  console.log("✅ Server running at http://localhost:3000");
-});
+
 // Vòng lặp cập nhật bóng & gửi dữ liệu cho client
 setInterval(() => {
   // Cập nhật từng phòng
@@ -263,3 +274,11 @@ setInterval(() => {
     io.to(roomId).emit("update", { players: room.players, ball });
   }
 }, 30);
+
+
+
+
+// Khởi động server
+server.listen(3000, () => {
+  console.log("✅ Server running at http://localhost:3000");
+});

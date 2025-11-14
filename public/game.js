@@ -182,3 +182,17 @@ socket.on("gameOver", (data) => {
     showExitButton();
     if (gameMessageEl) gameMessageEl.textContent = message;
 });
+
+// Khi trận tái đấu bắt đầu
+socket.on("rematchStart", () => {
+    gameOver = false;
+    message = "🔁 Trận đấu mới bắt đầu!";
+    draw();
+
+    // Xóa nút chơi lại và ẩn nút thoát
+    const restartBtn = document.getElementById("restartBtn");
+    if (restartBtn) restartBtn.remove();
+    
+    const exitBtn = document.getElementById("exitBtn");
+    if (exitBtn) exitBtn.classList.add("hidden");
+});
