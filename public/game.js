@@ -31,3 +31,32 @@ let ball = { x: 300, y: 200 };
 let message = "";
 let gameOver = false;
 let currentRoom = null;
+
+// Event Listeners
+createRoomBtn.addEventListener("click", () => {
+    const playerName = playerNameInput.value.trim();
+    if (!playerName) {
+        alert("Vui lòng nhập tên của bạn!");
+        return;
+    }
+    socket.emit("createRoom", playerName);
+});
+
+joinRoomBtn.addEventListener("click", () => {
+    const playerName = playerNameInput.value.trim();
+    const roomId = roomIdInput.value.trim();
+    if (!playerName || !roomId) {
+        alert("Vui lòng nhập đầy đủ thông tin!");
+        return;
+    }
+    socket.emit("joinRoom", { roomId, playerName });
+});
+
+randomRoomBtn.addEventListener("click", () => {
+    const playerName = playerNameInput.value.trim();
+    if (!playerName) {
+        alert("Vui lòng nhập tên của bạn!");
+        return;
+    }
+    socket.emit("joinRandom", playerName);
+});
