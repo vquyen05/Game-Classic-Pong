@@ -80,3 +80,14 @@ socket.on("roomCreated", ({ roomId }) => {
     message = "⏳ Đang chờ người chơi khác...";
     draw();
 });
+
+socket.on("roomJoined", ({ roomId }) => {
+    // Reset game state trước khi vào phòng mới
+    resetGameState();
+    currentRoom = roomId;
+    roomInfo.textContent = roomId;
+    homeScreen.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    message = "✅ Đã vào phòng thành công!";
+    draw();
+});
