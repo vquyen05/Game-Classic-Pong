@@ -114,7 +114,44 @@ io.on("connection", (socket) => {
       socket.emit("roomCreated", { roomId });
     }
   });
-    // Khi người chơi rời phòng chủ động
+
+  // Nhận dữ liệu di chuyển từ client
+  socket.on("move", (posY) => {
+    if (currentRoom && currentRoom.players[socket.id]) {
+      const minY = 40;
+      const maxY = canvasHeight - 40;
+      currentRoom.players[socket.id].y = Math.max(minY, Math.min(maxY, posY));
+    }
+  });
+
+  // Khi người chơi yêu cầu tái đấu
+  socket.on("requestRematch", () => {
+    if (!currentRoom) return;
+    
+    currentRoom.rematchSet.add(socket.id);
+    const roomId = Object.keys(rooms).find(id => rooms[id] === currentRoom);
+    const players = currentRoom.players;
+
+    // Nếu chỉ có 1 người nhấn
+    if (currentRoom.rematchSet.size === 1) {
+      Object.keys(players).forEach(id => {
+        if (id !== socket.id) {
+          io.to(id).emit("message", "🔁 Đối thủ muốn tái đấu!");
+        }
+      });
+    }
+
+    // Nếu cả 2 đều nhấn
+    if (currentRoom.rematchSet.size === 2) {
+      currentRoom.rematchSet.clear();
+      resetRoom(currentRoom);
+      io.to(roomId).emit("rematchStart");
+      io.to(roomId).emit("message", "🔁 Trận đấu mới bắt đầu!");
+    }
+  });
+
+
+  // Khi người chơi rời phòng chủ động
   socket.on("leaveRoom", () => {
     if (currentRoom) {
       const roomId = Object.keys(rooms).find(id => rooms[id] === currentRoom);
@@ -137,20 +174,6 @@ io.on("connection", (socket) => {
       }
       currentRoom = null;
     }
-  });
-
-  // Khi trận tái đấu bắt đầu
-  socket.on("rematchStart", () => {
-      gameOver = false;
-      message = "🔁 Trận đấu mới bắt đầu!";
-      draw();
-
-      // Xóa nút chơi lại và ẩn nút thoát
-      const restartBtn = document.getElementById("restartBtn");
-      if (restartBtn) restartBtn.remove();
-      
-      const exitBtn = document.getElementById("exitBtn");
-      if (exitBtn) exitBtn.classList.add("hidden");
   });
 
   // Khi người chơi ngắt kết nối
@@ -178,6 +201,57 @@ io.on("connection", (socket) => {
   });
 });
 
+// Reset lại toàn bộ điểm & bóng cho một phòng
+function resetRoom(room) {
+  for (const id in room.players) {
+    room.players[id].score = 0;
+    room.players[id].y = 200;
+  }
+  resetBall(room);
+}
+
+// Lưu góc bóng bay lần trước để tránh trùng lặp
+let lastAngle = 0;
+
+// Tạo góc ngẫu nhiên cho bóng, đảm bảo không trùng với góc trước đó
+function getRandomAngle() {
+  // Tạo một mảng các góc có thể (từ -60 đến 60 độ, chia thành 12 góc)
+  const possibleAngles = [];
+  for (let i = -60; i <= 60; i += 10) {
+    if (Math.abs(i - lastAngle) > 15) { // Đảm bảo góc mới khác góc cũ ít nhất 15 độ
+      possibleAngles.push(i);
+    }
+  }
+  
+  // Chọn ngẫu nhiên một góc từ các góc có thể
+  const randomAngle = possibleAngles[Math.floor(Math.random() * possibleAngles.length)];
+  lastAngle = randomAngle;
+  return randomAngle;
+}
+
+// Reset bóng về giữa sân
+function resetBall(room, direction = null) {
+  // Nếu không có hướng được chỉ định (ví dụ: khi bắt đầu game), chọn ngẫu nhiên
+  if (direction === null) {
+    direction = Math.random() > 0.5 ? 1 : -1;
+  }
+
+  const angle = getRandomAngle(); // Lấy góc ngẫu nhiên
+  const angleInRadians = (angle * Math.PI) / 180; // Chuyển đổi góc sang radian
+
+  // Tính toán dx và dy dựa trên góc và hướng
+  const dx = INITIAL_BALL_SPEED * Math.cos(angleInRadians) * direction;
+  const dy = INITIAL_BALL_SPEED * Math.sin(angleInRadians);
+
+  room.ball = {
+    x: canvasWidth / 2,
+    y: canvasHeight / 2,
+    dx: dx,
+    dy: dy,
+    radius: 8,
+    speed: INITIAL_BALL_SPEED  // Thêm thuộc tính speed để theo dõi tốc độ
+  };
+}
 
 // Vòng lặp cập nhật bóng & gửi dữ liệu cho client
 setInterval(() => {
@@ -274,9 +348,6 @@ setInterval(() => {
     io.to(roomId).emit("update", { players: room.players, ball });
   }
 }, 30);
-
-
-
 
 // Khởi động server
 server.listen(3000, () => {

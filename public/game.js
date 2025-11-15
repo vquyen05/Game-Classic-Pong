@@ -23,8 +23,8 @@ const gameMessageEl = document.getElementById("gameMessage");
 
 // Read theme colors from CSS variables so canvas elements contrast with background
 const rootStyles = getComputedStyle(document.documentElement);
-const CANVAS_BALL_COLOR = (rootStyles.getPropertyValue('--text') || '#ea3114ff').trim();
-const CANVAS_PADDLE_COLOR = (rootStyles.getPropertyValue('--primary') || '#ff2c2cff').trim();
+const CANVAS_BALL_COLOR = (rootStyles.getPropertyValue('--text') || '#07203f').trim();
+const CANVAS_PADDLE_COLOR = (rootStyles.getPropertyValue('--primary') || '#0b66ff').trim();
 
 let players = {};
 let ball = { x: 300, y: 200 };
@@ -196,3 +196,117 @@ socket.on("rematchStart", () => {
     const exitBtn = document.getElementById("exitBtn");
     if (exitBtn) exitBtn.classList.add("hidden");
 });
+
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 🖼️ Vẽ background trước (ảnh nằm trong thư mục public)
+    if (background.complete && background.naturalHeight !== 0) {
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    } else {
+        background.onload = () => ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    }
+
+
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, 11, 0, Math.PI * 2);
+    ctx.shadowColor = "#ff0000ff";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#ff0000ff";
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#ff0202ff";
+    ctx.stroke();
+
+    // Vẽ paddle 
+    ctx.fillStyle = CANVAS_PADDLE_COLOR;
+    const ids = Object.keys(players);
+    ids.forEach((id, i) => {
+        const x = i === 0 ? 20 : canvas.width - 30;
+        const y = players[id].y - 40;
+        ctx.fillRect(x, y, 10, 80);
+    });
+
+    // (Optional) If no DOM message element, draw small message
+    if (!gameMessageEl && message) {
+        ctx.font = "18px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(message, canvas.width / 2, 30);
+        ctx.textAlign = "left";
+    }
+}
+
+function showRestartOptions() {
+    const container = document.getElementById("buttonContainer");
+    if (!container) return;
+    // If a static restart button exists in the DOM (we added one in index.html), show and wire it.
+    let btn = document.getElementById("restartBtn");
+    if (btn) {
+        btn.classList.remove("hidden");
+        btn.disabled = false;
+        btn.onclick = () => {
+            socket.emit("requestRematch");
+            btn.disabled = true;
+            message = "⏳ Đang chờ đối thủ...";
+            if (gameMessageEl) gameMessageEl.textContent = message;
+            draw();
+        };
+        return;
+    }
+
+    // Fallback: create button dynamically if not present
+    btn = document.createElement("button");
+    btn.id = "restartBtn";
+    btn.className = "btn primary";
+    btn.textContent = "Chơi lại";
+    btn.onclick = () => {
+        socket.emit("requestRematch");
+        btn.disabled = true;
+        message = "⏳ Đang chờ đối thủ...";
+        if (gameMessageEl) gameMessageEl.textContent = message;
+        draw();
+    };
+
+    container.appendChild(btn);
+}
+
+// Hiển thị nút thoát khi game kết thúc
+// Reset trạng thái game
+function resetGameState(keepExitButton = false) {
+    gameOver = false;
+    message = "";
+    // Reset players và ball
+    players = {};
+    ball = { x: 300, y: 200 };
+    // Xóa các nút điều khiển
+    const restartBtn = document.getElementById("restartBtn");
+    if (restartBtn) restartBtn.remove();
+    
+    // Chỉ ẩn nút thoát nếu không có yêu cầu giữ lại
+    if (!keepExitButton) {
+        const exitBtn = document.getElementById("exitBtn");
+        if (exitBtn) exitBtn.classList.add("hidden");
+    }
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function showExitButton() {
+    const exitBtn = document.getElementById("exitBtn");
+    if (exitBtn) {
+        exitBtn.classList.remove("hidden");
+        exitBtn.onclick = () => {
+            // Thông báo cho server
+            socket.emit("leaveRoom");
+            // Quay về màn hình home
+            gameScreen.classList.add("hidden");
+            homeScreen.classList.remove("hidden");
+            // Reset trạng thái game và xóa dữ liệu cũ
+            resetGameState();
+            currentRoom = null;
+        };
+    }
+}
